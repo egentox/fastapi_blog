@@ -116,13 +116,31 @@ async def general_http_exception_handler(
 
     return templates.TemplateResponse(
         request,
-        "error.html",
+        "error_page.html",
         {
             "status_code": exception.status_code,
             "title": exception.status_code,
             "message": message,
         },
         status_code=exception.status_code,
+    )
+
+
+@app.get("/login", include_in_schema=False)
+async def login_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "login.html",
+        {"title": "Login"},
+    )
+
+
+@app.get("/register", include_in_schema=False)
+async def register_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "register.html",
+        {"title": "Register"},
     )
 
 
@@ -136,7 +154,7 @@ async def validation_exception_handler(
 
     return templates.TemplateResponse(
         request,
-        "error.html",
+        "error_page.html",
         {
             "status_code": status.HTTP_422_UNPROCESSABLE_CONTENT,
             "title": status.HTTP_422_UNPROCESSABLE_CONTENT,
