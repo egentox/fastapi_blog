@@ -220,5 +220,6 @@ __marimo__/
 .streamlit/secrets.toml
 
 app/media/profile_pics/*
+app/populate_images/*
 
 *.db

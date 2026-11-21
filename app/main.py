@@ -33,7 +33,6 @@ BASE_DIR = Path(__file__).resolve().parent
 app = FastAPI(lifespan=lifespan)
 
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
-app.mount("/media", StaticFiles(directory=BASE_DIR / "media"), name="media")
 
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
