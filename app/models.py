@@ -57,6 +57,12 @@ class Post(Base):
     author: Mapped[User] = relationship(back_populates="posts")
 
 
+class PostLike(Base):
+    __tablename__ = "post_likes"
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    post_id: Mapped[int] = mapped_column(ForeignKey("posts.id"), primary_key=True)
+
+
 class PasswordResetToken(Base):
     __tablename__ = "password_reset_tokens"
 

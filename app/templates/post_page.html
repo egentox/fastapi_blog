@@ -18,7 +18,24 @@
                 </div>
                 <h2 class="article-title">{{ post.title }}</h2>
                 <p class="article-content">{{ post.content }}</p>
-                
+
+                <div class="mt-3 d-flex align-items-center gap-2">
+                    <button type="button"
+                            class="btn btn-sm btn-outline-danger"
+                            data-like-button
+                            data-post-id="{{ post.id }}"
+                            aria-pressed="false"
+                            disabled>
+                        <span data-like-label>Like</span>
+                        <span aria-hidden="true">·</span>
+                        <span data-like-count>{{ post.likes }}</span>
+                    </button>
+                    <span class="small text-danger"
+                          data-like-status
+                          role="status"
+                          aria-live="polite"></span>
+                </div>
+
                     <div id="postActions" class="post-actions mt-3 pt-3 border-top d-none">
                         <button type="button"
                                 class="btn btn-outline-secondary me-1"
@@ -109,6 +126,7 @@
 {% endblock content %}
 {% block scripts %}
     <script type="module">
+    import { initializeLikeButtons } from '/static/js/likes.js';
     import { getCurrentUser, getToken } from '/static/js/auth.js';
     import { getErrorMessage, showModal, hideModal } from '/static/js/utils.js';
 
@@ -213,5 +231,6 @@
     });
 
     checkOwnership();
+    initializeLikeButtons(document);
     </script>
 {% endblock scripts %}

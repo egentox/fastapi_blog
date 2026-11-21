@@ -8,7 +8,13 @@ from sqlalchemy.orm import selectinload
 from app import models
 from app.auth import CurrentUser
 from app.database import get_db
-from app.schemas import PaginatedPostsResponse, PostCreate, PostResponse, PostUpdate
+from app.schemas import (
+    PaginatedPostsResponse,
+    PostCreate,
+    PostLikesResponse,
+    PostResponse,
+    PostUpdate,
+)
 
 router = APIRouter()
 
@@ -106,6 +112,103 @@ async def update_post_full(
     return post
 
 
+@router.get("/{post_id}/like", response_model=PostLikesResponse)
+async def get_post_likes(
+    current_user: CurrentUser,
+    post_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    post_result = await db.execute(
+        select(models.Post).where(models.Post.id == post_id)
+    )
+    post = post_result.scalar_one_or_none()
+    if post is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found",
+        )
+    like_result = await db.execute(
+        select(models.PostLike).where(
+            models.PostLike.post_id == post_id,
+            models.PostLike.user_id == current_user.id,
+        )
+    )
+    like = like_result.scalar_one_or_none()
+    return {
+        "post_id": post.id,
+        "liked": like is not None,
+        "likes_count": post.likes,
+    }
+
+
+@router.put("/{post_id}/like", response_model=PostLikesResponse)
+async def like_post(
+    current_user: CurrentUser,
+    post_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    post_result = await db.execute(
+        select(models.Post).where(models.Post.id == post_id)
+    )
+    post = post_result.scalar_one_or_none()
+    if post is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found",
+        )
+    results = await db.execute(
+        select(models.PostLike).where(
+            models.PostLike.post_id == post_id,
+            models.PostLike.user_id == current_user.id,
+        )
+    )
+    like = results.scalar_one_or_none()
+    if like is None:
+        db.add(models.PostLike(user_id=current_user.id, post_id=post_id))
+        post.likes += 1
+        await db.commit()
+    return {
+        "post_id": post_id,
+        "liked": True,
+        "likes_count": post.likes,
+    }
+
+
+@router.delete("/{post_id}/like", response_model=PostLikesResponse)
+async def unlike_post(
+    current_user: CurrentUser,
+    post_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    post_result = await db.execute(
+        select(models.Post).where(models.Post.id == post_id)
+    )
+    post = post_result.scalar_one_or_none()
+    if post is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found",
+        )
+
+    like_result = await db.execute(
+        select(models.PostLike).where(
+            models.PostLike.post_id == post_id,
+            models.PostLike.user_id == current_user.id,
+        )
+    )
+    like = like_result.scalar_one_or_none()
+    if like is not None:
+        await db.delete(like)
+        post.likes -= 1
+        await db.commit()
+
+    return {
+        "post_id": post.id,
+        "liked": False,
+        "likes_count": post.likes,
+    }
+
+
 @router.patch("/{post_id}", response_model=PostResponse)
 async def update_post_partial(
     post_id: int,
@@ -142,7 +245,9 @@ async def delete_post(
     current_user: CurrentUser,
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    result = await db.execute(select(models.Post).where(models.Post.id == post_id))
+    result = await db.execute(
+        select(models.PostLike).where(models.PostLike.id == post_id)
+    )
     post = result.scalars().first()
     if not post:
         raise HTTPException(

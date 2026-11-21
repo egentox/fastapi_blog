@@ -56,6 +56,13 @@ class PostResponse(PostBase):
     user_id: int
     date_posted: datetime
     author: UserPublic
+    likes: int = Field(validation_alias="likes")
+
+
+class PostLikesResponse(BaseModel):
+    post_id: int
+    liked: bool
+    likes_count: int
 
 
 class PaginatedPostsResponse(BaseModel):
